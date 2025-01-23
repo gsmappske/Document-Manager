@@ -1,0 +1,126 @@
+ <style>
+     /*
+     **CSS Selector** We will be testing different CSS selectors
+     */
+    div[style*="font-size: 10px;"] { /* Example - Replace this as we go*/
+         display: none;
+     }
+
+ /* Existing CSS styles from the last try, DO NOT EDIT */
+    body {
+    background: linear-gradient(120deg, #ffffff, #f8f9fa);
+    color: #333;
+    font-family: 'Inter', sans-serif;
+    padding: 20px;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .card {
+    background: rgba(255, 255, 255, 0.7); /* Transparent card with glass effect */
+    color: #333;
+    margin-top: 20px;
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+  }
+
+  .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0px 12px 20px rgba(0, 0, 0, 0.2);
+  }
+
+  .card-title {
+    color: #5e72e4;
+    font-weight: 600;
+    font-size: 1.4rem;
+  }
+
+  .btn-primary {
+    background: linear-gradient(120deg, #5e72e4, #825ee4);
+    border: none;
+    color: #fff;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: bold;
+    border-radius: 8px;
+    transition: background-color 0.3s, transform 0.3s;
+  }
+
+  .btn-primary:hover {
+    background: linear-gradient(120deg, #825ee4, #5e72e4);
+    transform: scale(1.05);
+  }
+
+  .btn-success {
+    background: linear-gradient(120deg, #28c76f, #20c57a);
+    border: none;
+    color: #fff;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: bold;
+    border-radius: 8px;
+    transition: background-color 0.3s, transform 0.3s;
+  }
+
+  .btn-success:hover {
+    background: linear-gradient(120deg, #20c57a, #28c76f);
+    transform: scale(1.05);
+  }
+
+  .alert-primary {
+    background: linear-gradient(to right, #6ec6ff, #42a5f5);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-weight: bold;
+  }
+
+  label.form-label {
+    font-weight: bold;
+    color: #666;
+  }
+
+  .modal-content {
+    background: rgba(255, 255, 255, 0.8); /* Glass effect for modal */
+    color: #333;
+    border-radius: 15px;
+    box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(8px);
+  }
+
+  #uploadMessage {
+    font-size: 14px;
+    color: #555;
+  }
+
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    body {
+      padding: 10px;
+    }
+
+    .container {
+      width: 100%;
+      padding: 0 15px;
+    }
+
+    .card-title {
+      font-size: 18px;
+    }
+
+    .btn {
+      font-size: 13px;
+    }
+
+    .modal-content {
+      width: 100%;
+      margin: 0;
+    }
+  }
+  </style>
