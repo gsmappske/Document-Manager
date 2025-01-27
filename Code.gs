@@ -1,4 +1,9 @@
- function doGet() {
+const SHEET_NAME = "Document Manager";
+const DIRECT_UPLOADS_SHEET_NAME = "Direct Uploads";
+const NO_FOLDER_MESSAGE = "No folders exist. Please add one.";
+
+// Serve the main HTML page
+function doGet() {
   const role = isAuthorized();
 
   if (!role) {
@@ -11,12 +16,56 @@
     .setTitle('Document Manager');
 }
 
+// Include HTML, CSS, or JS files dynamically
+function include(filename) {
+  return HtmlService.createHtmlOutputFromFile(filename).getContent();
+}
 
+// Authorization check
+function isAuthorized() {
+  const email = Session.getActiveUser().getEmail();
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('User Management');
 
+  if (!sheet) {
+    throw "User Management sheet not found.";
+  }
 
-const SHEET_NAME = "Document Manager";
-const NO_FOLDER_MESSAGE = "No folders exist. Please add one.";
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === email && data[i][2] === 'Active') { // Check email and active status
+      return data[i][1]; // Return role (e.g., Admin, User)
+    }
+  }
 
+  return null; // Not authorized
+}
+
+// Retrieve logged-in user details
+function getLoggedUserDetails() {
+  const email = Session.getActiveUser().getEmail();
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('User Management');
+
+  if (!sheet) {
+    throw "User Management sheet not found.";
+  }
+
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === email && data[i][2] === 'Active') {
+      return {
+        email: email,
+        role: data[i][1] // Role: Admin or User
+      };
+    }
+  }
+
+  return {
+    email: email,
+    role: null // Not an authorized user
+  };
+}
+
+// Retrieve folder hierarchy
 function getFoldersAndSubfolders() {
   try {
     const rootFolderId = PropertiesService.getScriptProperties().getProperty('ROOT_FOLDER_ID');
@@ -43,6 +92,7 @@ function getFoldersAndSubfolders() {
   }
 }
 
+// Create a new folder
 function createFolder(folderName, parentFolderName = null) {
   try {
     const rootFolderId = PropertiesService.getScriptProperties().getProperty('ROOT_FOLDER_ID');
@@ -80,24 +130,7 @@ function createFolder(folderName, parentFolderName = null) {
   }
 }
 
-function extractTextContent(fileId) {
-  try {
-      const file = DriveApp.getFileById(fileId);
-        const fileType = file.getMimeType();
-      
-        if (fileType === MimeType.PLAIN_TEXT || fileType === "text/csv") {
-            return file.getBlob().getDataAsString();
-          }else{
-            return `Not a txt or csv file. File type is: ${fileType}`
-          }
-
-  } catch (e) {
-      Logger.log("Error extracting file content: " + e);
-      return "Error extracting file content: " + e.message;
-  }
-}
-
-
+// Upload a file and log its details
 function uploadFile(byteArray, fileName, fileType, mainFolderName, subFolderName = null) {
   try {
     const rootFolderId = PropertiesService.getScriptProperties().getProperty('ROOT_FOLDER_ID');
@@ -141,25 +174,9 @@ function uploadFile(byteArray, fileName, fileType, mainFolderName, subFolderName
     const uploadedFile = targetFolder.createFile(blob);
     const fileUrl = uploadedFile.getUrl();
 
-      //extract text content from the file
-     let fileContent = null
-      if(fileType === 'application/pdf') {
-        fileContent = extractTextFromPDF(uploadedFile.getId())
-     } else{
-          fileContent = extractTextContent(uploadedFile.getId())
-      }
-    // Log the upload to the sheet
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    let sheet = ss.getSheetByName('Document Data');
-    if (!sheet) {
-      // Create the sheet if it doesn't exist
-      sheet = ss.insertSheet('Document Data');
-      sheet.appendRow(['User Email', 'Main Folder', 'Subfolder', 'File Name', 'File URL', 'Timestamp','File content']);
-    }
-
+    // Log the upload
     const userEmail = Session.getActiveUser().getEmail();
-    const timestamp = new Date();
-    sheet.appendRow([userEmail, mainFolderName, subFolderName || '-', fileName, fileUrl, timestamp, fileContent]);
+    logDirectUpload(userEmail, mainFolderName, subFolderName, fileName, fileUrl);
 
     return `File uploaded successfully to '${mainFolderName}${subFolderName ? " > " + subFolderName : ""}'.`;
   } catch (error) {
@@ -168,89 +185,96 @@ function uploadFile(byteArray, fileName, fileType, mainFolderName, subFolderName
   }
 }
 
-function isAuthorized() {
-  const email = Session.getActiveUser().getEmail();
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('User Management');
+// Log direct uploads into a dedicated sheet
+function logDirectlyUploadedFiles() {
+  try {
+    const rootFolderId = PropertiesService.getScriptProperties().getProperty('ROOT_FOLDER_ID');
+    const rootFolder = DriveApp.getFolderById(rootFolderId);
 
-  if (!sheet) {
-    throw "User Management sheet not found.";
-  }
-
-  const data = sheet.getDataRange().getValues();
-  for (let i = 1; i < data.length; i++) {
-    if (data[i][0] === email && data[i][2] === 'Active') { // Check email and active status
-      return data[i][1]; // Return role (e.g., Admin, User)
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let directUploadsSheet = ss.getSheetByName(DIRECT_UPLOADS_SHEET_NAME);
+    if (!directUploadsSheet) {
+      directUploadsSheet = ss.insertSheet(DIRECT_UPLOADS_SHEET_NAME);
+      directUploadsSheet.appendRow([
+        'Serial #',
+        'User Email',
+        'Main Folder',
+        'Subfolder',
+        'File Name',
+        'File URL',
+        'Timestamp'
+      ]);
     }
-  }
 
-  return null; // Not authorized
+    const existingLogs = directUploadsSheet.getDataRange().getValues();
+    const loggedFiles = new Set(existingLogs.map(row => row[4])); // Column 5: File Name
+
+    processFolder(rootFolder, loggedFiles, directUploadsSheet);
+  } catch (error) {
+    Logger.log(`Error logging direct uploads: ${error.message}`);
+  }
 }
 
+// Helper function to recursively process folders
+function processFolder(folder, loggedFiles, sheet, mainFolderName = null, subFolderName = null) {
+  const files = folder.getFiles();
+  let serialNumber = sheet.getLastRow(); // Start serial number from the last row
 
-function include(filename) {
-  return HtmlService.createHtmlOutputFromFile(filename).getContent();
+  while (files.hasNext()) {
+    const file = files.next();
+    const fileName = file.getName();
+    const fileUrl = file.getUrl();
+    const timestamp = new Date();
+    const userEmail = Session.getActiveUser().getEmail();
 
+    if (loggedFiles.has(fileName)) continue;
+
+    serialNumber += 1;
+    sheet.appendRow([
+      serialNumber,
+      userEmail,
+      mainFolderName || folder.getName(),
+      subFolderName || '-',
+      fileName,
+      fileUrl,
+      timestamp
+    ]);
+  }
+
+  const subfolders = folder.getFolders();
+  while (subfolders.hasNext()) {
+    const subfolder = subfolders.next();
+    const newMainFolderName = mainFolderName || folder.getName();
+    const newSubFolderName = subfolder.getName();
+    processFolder(subfolder, loggedFiles, sheet, newMainFolderName, newSubFolderName);
+  }
 }
 
-
-
-
-
-
-function getLoggedUserDetails() {
-  const email = Session.getActiveUser().getEmail();
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('User Management');
-
-  if (!sheet) {
-    throw "User Management sheet not found.";
+// Log a single file upload
+function logDirectUpload(userEmail, mainFolderName, subFolderName, fileName, fileUrl) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let directUploadsSheet = ss.getSheetByName(DIRECT_UPLOADS_SHEET_NAME);
+  if (!directUploadsSheet) {
+    directUploadsSheet = ss.insertSheet(DIRECT_UPLOADS_SHEET_NAME);
+    directUploadsSheet.appendRow([
+      'Serial #',
+      'User Email',
+      'Main Folder',
+      'Subfolder',
+      'File Name',
+      'File URL',
+      'Timestamp'
+    ]);
   }
 
-  const data = sheet.getDataRange().getValues();
-  for (let i = 1; i < data.length; i++) {
-    if (data[i][0] === email && data[i][2] === 'Active') {
-      return {
-        email: email,
-        role: data[i][1] // Role: Admin or User
-      };
-    }
-  }
-
-  return {
-    email: email,
-    role: null // Not an authorized user
-  };
-}
-
-
-
-function addUser(email, role) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('User Management');
-
-  if (!sheet) {
-    throw "User Management sheet not found.";
-  }
-
-  const currentUserDetails = getLoggedUserDetails();
-  if (currentUserDetails.role !== 'Admin') {
-    throw "Unauthorized action. Only administrators can add users.";
-  }
-
-  const data = sheet.getDataRange().getValues();
-  for (let i = 1; i < data.length; i++) {
-    if (data[i][0] === email) {
-      throw `User with email ${email} already exists.`;
-    }
-  }
-
-  sheet.appendRow([email, role, 'Active']);
-  return `User '${email}' added successfully as '${role}'.`;
-}
-
-
-
-
-
-// to include php functions.
-function include (filename) {
-return HtmlService.createHtmlOutputFromFile(filename).getContent();
+  const serialNumber = directUploadsSheet.getLastRow();
+  directUploadsSheet.appendRow([
+    serialNumber,
+    userEmail,
+    mainFolderName,
+    subFolderName || '-',
+    fileName,
+    fileUrl,
+    new Date()
+  ]);
 }
