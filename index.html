@@ -3,10 +3,9 @@
 <head>
   <base target="_top">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  
 </head>
 <body>
-<?!= include("css");?>
+  <?!= include("css"); ?>
   <div class="container">
     <!-- User Info -->
     <div id="user-info" class="alert alert-primary"></div>
@@ -16,7 +15,6 @@
       <div class="card-body">
         <h5 class="card-title">Main Folder</h5>
         <div class="mb-3">
-       <!--    <label for="mainFolderSelect" class="form-label">Select a Main Folder</label>  -->
           <select id="mainFolderSelect" class="form-select" onchange="handleMainFolderChange()">
             <!-- Main folders will be dynamically loaded -->
           </select>
@@ -32,7 +30,6 @@
       <div class="card-body">
         <h5 class="card-title">Subfolder</h5>
         <div class="mb-3">
-       <!--    <label for="subFolderSelect" class="form-label">Select a Subfolder</label> -->
           <select id="subFolderSelect" class="form-select" onchange="handleSubfolderChange()">
             <!-- Subfolders will be dynamically loaded -->
           </select>
@@ -44,32 +41,30 @@
     </div>
 
     <!-- Document Upload -->
-        <div class="card" id="uploadCard" style="display: none;">
-            <div class="card-body">
-                <div class="mb-3">
-                <label for="fileNameInput" class="form-label">File Name</label>
-                    <input type="text" id="fileNameInput" class="form-control" placeholder="Enter file name (Optional)">
-                </div>
-                <div class="mb-3">
-                <!--  <label for="fileUpload" class="form-label">Choose a File</label>  -->
-                <input type="file" id="fileUpload" class="form-control">
-                </div>
-                <button class="btn btn-success" onclick="uploadDocument()">Upload Document</button>
-                <div id="uploadMessage" class="alert alert-info mt-3" style="display: none;"></div>
-            </div>
-            </div>
+    <div class="card" id="uploadCard" style="display: none;">
+      <div class="card-body">
+        <div class="mb-3">
+          <label for="fileNameInput" class="form-label">File Name</label>
+          <input type="text" id="fileNameInput" class="form-control" placeholder="Enter file name (Optional)">
+        </div>
+        <div class="mb-3">
+          <input type="file" id="fileUpload" class="form-control">
+        </div>
+        <button class="btn btn-success" onclick="uploadDocument()">Upload Document</button>
+        <div id="uploadMessage" class="alert alert-info mt-3" style="display: none;"></div>
+      </div>
+    </div>
 
     <!-- Admin Section -->
     <div id="admin-section" class="card" style="display: none;">
       <div class="card-body">
+        <!-- User Management -->
         <h5 class="card-title">User Management - Add New User</h5>
         <form id="addUserForm">
           <div class="mb-3">
-           <!--  <label for="userEmailInput" class="form-label">Email</label>  -->
             <input type="email" class="form-control" id="userEmailInput" placeholder="Enter user email" required>
           </div>
           <div class="mb-3">
-           <!-- <label for="userRoleSelect" class="form-label">Role</label> -->
             <select id="userRoleSelect" class="form-select">
               <option value="User">User</option>
               <option value="Admin">Admin</option>
@@ -78,6 +73,12 @@
           <button type="button" class="btn btn-primary" onclick="addUser()">Add User</button>
           <div id="userMessage" class="alert mt-3" style="display: none;"></div>
         </form>
+
+        <!-- Admin Controls -->
+        <hr>
+        <h5 class="card-title">Admin Controls</h5>
+        <button id="logUploadsButton" class="btn btn-info" onclick="triggerLogDirectUploads()">Log Direct Uploads</button>
+        <div id="logUploadsMessage" class="alert mt-3" style="display: none;"></div>
       </div>
     </div>
 
@@ -92,7 +93,6 @@
           <div class="modal-body">
             <form id="addFolderForm">
               <div class="mb-3">
-               <!--  <label for="folderNameInput" class="form-label">Folder Name</label>  -->
                 <input type="text" class="form-control" id="folderNameInput" placeholder="Enter folder name" required>
               </div>
               <div id="folderMessage" class="alert alert-danger mt-2" style="display: none;"></div>
@@ -107,9 +107,11 @@
     </div>
   </div>
 
+  <!-- Footer -->
+  <div style="font-size: 10px; margin-top: 5px; text-align: center; color: rgb(117, 117, 117);">
+    This application was created by a Google Apps Script user
+  </div>
 
-<div style="font-size: 10px; margin-top: 5px; text-align: center; color: rgb(117, 117, 117);">This application was created by a Google Apps Script user</div>
- <?!= include("js");?>
- 
+  <?!= include("js"); ?>
 </body>
 </html>
