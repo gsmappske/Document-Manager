@@ -4,76 +4,90 @@
   let isAddingSubfolder = false;
 
   // Initialize the application
-  function initializeApp() {
-    google.script.run.withSuccessHandler((userDetails) => {
-      const userInfo = document.getElementById("user-info");
-      const adminSection = document.getElementById("admin-section");
+ // Remove this duplicate function block from the script
+function initializeApp() {
+  google.script.run.withSuccessHandler((userDetails) => {
+    const userInfo = document.getElementById("user-info");
+    const adminSection = document.getElementById("admin-section");
 
-      // Display logged-in user's email
-      userInfo.textContent = `Logged in as: ${userDetails.email}`;
+    // Display logged-in user's email
+    userInfo.textContent = `Logged in as: ${userDetails.email}`;
 
-      // Show admin section if the user is an Admin
-      if (userDetails.role === "Admin") {
-        adminSection.style.display = "block";
-      }
+    // Show admin section if the user is an Admin
+    if (userDetails.role === "Admin") {
+      adminSection.style.display = "block";
+    }
 
-      loadMainFolders(); // Load folders for all users
-    }).getLoggedUserDetails();
-  }
+    loadMainFolders(); // Load folders for all users
+  }).getLoggedUserDetails();
+}
+
+
+
+  
   // Load main folders from the server
   function loadMainFolders() {
-    google.script.run
-      .withSuccessHandler((result) => {
-        folderHierarchy = result;
-        const mainFolderSelect = document.getElementById("mainFolderSelect");
-        mainFolderSelect.innerHTML = '<option value="">Select Main Folder</option>';
+  google.script.run
+    .withSuccessHandler((result) => {
+      folderHierarchy = result;
 
-        for (const mainFolder in folderHierarchy) {
-          const option = document.createElement("option");
-          option.value = mainFolder;
-          option.textContent = mainFolder;
-          mainFolderSelect.appendChild(option);
-        }
-      })
-      .withFailureHandler((err) => {
-        console.error("Error loading main folders:", err.message);
-        alert("Failed to load folders. Please try again.");
-      })
-      .getFoldersAndSubfolders();
-  }
+      // Get main folders and sort them alphabetically or numerically
+      const mainFolders = Object.keys(folderHierarchy).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
+      const mainFolderSelect = document.getElementById("mainFolderSelect");
+      mainFolderSelect.innerHTML = '<option value="">Select Main Folder</option>';
+
+      // Populate the dropdown with sorted folder names
+      mainFolders.forEach((mainFolder) => {
+        const option = document.createElement("option");
+        option.value = mainFolder;
+        option.textContent = mainFolder;
+        mainFolderSelect.appendChild(option);
+      });
+    })
+    .withFailureHandler((err) => {
+      console.error("Error loading main folders:", err.message);
+      alert("Failed to load folders. Please try again.");
+    })
+    .getFoldersAndSubfolders();
+}
+
 
   // Handle main folder selection
   function handleMainFolderChange() {
-    const selectedMainFolder = document.getElementById("mainFolderSelect").value;
-    const subFolderSelect = document.getElementById("subFolderSelect");
-    const subfolderCard = document.getElementById("subfolderCard");
-    const uploadCard = document.getElementById("uploadCard");
-    const addMainFolderWrapper = document.getElementById("addMainFolderWrapper");
+  const selectedMainFolder = document.getElementById("mainFolderSelect").value;
+  const subFolderSelect = document.getElementById("subFolderSelect");
+  const subfolderCard = document.getElementById("subfolderCard");
+  const uploadCard = document.getElementById("uploadCard");
+  const addMainFolderWrapper = document.getElementById("addMainFolderWrapper");
 
-    // Hide or show the "Add Main Folder" button
-    addMainFolderWrapper.style.display = selectedMainFolder ? "none" : "block";
+  // Hide or show the "Add Main Folder" button
+  addMainFolderWrapper.style.display = selectedMainFolder ? "none" : "block";
 
-    if (!selectedMainFolder) {
-      subfolderCard.style.display = "none";
-      uploadCard.style.display = "none";
-      return;
-    }
-
-    subFolderSelect.innerHTML = '<option value="">Select Subfolder</option>';
-    const subfolders = folderHierarchy[selectedMainFolder];
-
-    if (subfolders && subfolders.length > 0) {
-      subfolders.forEach((subfolder) => {
-        const option = document.createElement("option");
-        option.value = subfolder;
-        option.textContent = subfolder;
-        subFolderSelect.appendChild(option);
-      });
-    }
-
-    subfolderCard.style.display = "block";
-    uploadCard.style.display = "block";
+  if (!selectedMainFolder) {
+    subfolderCard.style.display = "none";
+    uploadCard.style.display = "none";
+    return;
   }
+
+  subFolderSelect.innerHTML = '<option value="">Select Subfolder</option>';
+  const subfolders = folderHierarchy[selectedMainFolder];
+
+  // Sort subfolders alphabetically or numerically
+  if (subfolders && subfolders.length > 0) {
+    const sortedSubfolders = subfolders.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    sortedSubfolders.forEach((subfolder) => {
+      const option = document.createElement("option");
+      option.value = subfolder;
+      option.textContent = subfolder;
+      subFolderSelect.appendChild(option);
+    });
+  }
+
+  subfolderCard.style.display = "block";
+  uploadCard.style.display = "block";
+}
+
 
   // Handle subfolder selection
   function handleSubfolderChange() {
@@ -106,30 +120,45 @@
 
   // Handle folder addition on modal submission
   function handleAddFolder() {
-    const folderName = document.getElementById("folderNameInput").value.trim();
-    const parentFolderName = isAddingSubfolder
-      ? document.getElementById("mainFolderSelect").value
-      : null;
+  const folderName = document.getElementById("folderNameInput").value.trim();
+  const parentFolderName = isAddingSubfolder
+    ? document.getElementById("mainFolderSelect").value
+    : null;
 
-    if (!folderName) {
-      alert("Folder name cannot be empty.");
-      return;
-    }
+  if (!folderName) {
+    alert("Folder name cannot be empty.");
+    return;
+  }
 
-    google.script.run
-      .withSuccessHandler(() => {
-        alert("Folder added successfully!");
+  google.script.run
+    .withSuccessHandler(() => {
+      // Show a modern success message
+      const modalBody = document.querySelector("#addFolderModal .modal-body");
+      const successMessage = document.createElement("div");
+      successMessage.className = "alert alert-success";
+      successMessage.textContent = "Folder added successfully!";
+      
+      // Insert the success message into the modal
+      modalBody.prepend(successMessage);
+
+      // Automatically hide the success message and modal
+      setTimeout(() => {
         const addFolderModal = bootstrap.Modal.getInstance(
           document.getElementById("addFolderModal")
         );
         addFolderModal.hide();
+
+        // Remove the success message after the modal is closed
+        successMessage.remove();
         loadMainFolders(); // Reload folders
-      })
-      .withFailureHandler((err) => {
-        alert(`Error adding folder: ${err.message}`);
-      })
-      .createFolder(folderName, parentFolderName);
-  }
+      }, 2000); // 2-second delay
+    })
+    .withFailureHandler((err) => {
+      alert(`Error adding folder: ${err.message}`);
+    })
+    .createFolder(folderName, parentFolderName);
+}
+
 
   // Upload a document to the selected folder
    function uploadDocument() {
@@ -214,6 +243,36 @@
       })
       .addUser(email, role);
   }
+
+
+
+   function triggerLogDirectUploads() {
+  const logMessage = document.getElementById("logUploadsMessage");
+  logMessage.style.display = "block";
+  logMessage.className = "alert alert-info";
+  logMessage.textContent = "Logging direct uploads...";
+
+  // Call the backend function
+  google.script.run
+    .withSuccessHandler(() => {
+      logMessage.className = "alert alert-success";
+      logMessage.textContent = "Direct uploads logged successfully.";
+      setTimeout(() => logMessage.style.display = "none", 3000); // Hide after 3 seconds
+    })
+    .withFailureHandler((error) => {
+      logMessage.className = "alert alert-danger";
+      logMessage.textContent = `Error logging uploads: ${error.message}`;
+    })
+    .logDirectlyUploadedFiles(); // Call the backend function
+}
+
+
+
+
+
+
+
+
 
   // Initialize the app on page load
   window.onload = function () {
